@@ -43,5 +43,6 @@
       </library>
     </orderEntry>
     <orderEntry type="inheritedJdk" />
+    <orderEntry type="library" name="navx-mxp" level="project" />
   </component>
 </module>
