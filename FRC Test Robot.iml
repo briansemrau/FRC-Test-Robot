@@ -2,8 +2,10 @@
 <module type="JAVA_MODULE" version="4">
   <component name="EclipseModuleManager">
     <varelement var="file://$wpilib$" value="wpilib" />
-    <varelement var="file://$wpilib.sources$" kind="src:" value="wpilib.sources" />
+    <varelement var="file://$wpilib.sources$" value="src:wpilib.sources" />
     <varelement var="file://$networktables$" value="networktables" />
+    <varelement var="file://$networktables.sources$" value="src:networktables.sources" />
+    <varelement var="file://$wpilib.sources$" kind="src:" value="wpilib.sources" />
     <varelement var="file://$networktables.sources$" kind="src:" value="networktables.sources" />
     <src_description expected_position="0">
       <src_folder value="file://$MODULE_DIR$/src" expected_position="0" />
