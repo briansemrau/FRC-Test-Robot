@@ -150,3 +150,4 @@ fabric.properties
 # modules.xml
 # .idea/misc.xml
 # *.ipr
+sysProps.xml
