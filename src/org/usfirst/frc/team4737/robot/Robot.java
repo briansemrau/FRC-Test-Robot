@@ -4,6 +4,7 @@ import com.kauailabs.navx.frc.AHRS;
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.Joystick.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import org.usfirst.frc.team4737.robot.oi.XboxController;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to each mode, as
@@ -38,7 +39,7 @@ public class Robot extends IterativeRobot {
     private RobotDrive robotDrive;
     private PIDController steerPID;
 
-    private Joystick xboxCtrlr;
+    private XboxController xboxCtrlr;
 
     /*
      * Autonomous Control
@@ -51,7 +52,7 @@ public class Robot extends IterativeRobot {
      * This function is run when the robot is first started up and should be used for any initialization code.
      */
     public void robotInit() {
-        System.out.println("hello ds, i'm a robot");
+        System.out.println("=====================\nTrebor the Test Robot\n=====================");
 
         // ############### Init sensors
 
@@ -77,14 +78,12 @@ public class Robot extends IterativeRobot {
 
         // ############### Init Controls
 
-        xboxCtrlr = new Joystick(0);
+        xboxCtrlr = new XboxController(0);
+        xboxCtrlr.LS.X.setDeadzone(-0.2, 0.2);
+        xboxCtrlr.LS.Y.setDeadzone(-0.2, 0.2);
+        xboxCtrlr.RS.X.setDeadzone(-0.2, 0.2);
+        xboxCtrlr.RS.Y.setDeadzone(-0.2, 0.2);
 
-        // ############### LiveWindow
-
-//        LiveWindow.addSensor("drive", "leftEncoder", leftEncoder);
-//        LiveWindow.addSensor("drive", "rightEncoder", rightEncoder);
-//
-//        LiveWindow.setEnabled(true);
     }
     
     private void initAutonPID() {
@@ -148,17 +147,15 @@ public class Robot extends IterativeRobot {
     }
 
     public void teleopPeriodic() {
-        double steer = xboxCtrlr.getRawAxis(0);
-        double throttle = xboxCtrlr.getRawAxis(3) - xboxCtrlr.getRawAxis(2);
+        double steer = xboxCtrlr.LS.X.get();
+        double throttle = xboxCtrlr.RT.get() - xboxCtrlr.LT.get();
 
-        boolean boost = xboxCtrlr.getRawButton(6);
-        boolean drift = xboxCtrlr.getRawButton(5);
+        boolean boost = xboxCtrlr.RB.get();
+        boolean drift = xboxCtrlr.LB.get();
 
-        if (Math.abs(steer) < 0.1) steer = 0;
         if (throttle < 0) steer = -steer;
 
-        // TODO tune deadband
-        if (boost || drift || Math.abs(throttle) > 0.1) {
+        if (boost || drift || throttle != 0) {
             if (!steerPID.isEnabled())
                 steerPID.enable();
 
@@ -178,8 +175,7 @@ public class Robot extends IterativeRobot {
 
 //            System.out.println(throttle + "   " + boost + "   " + adjustedThrottle);
             robotDrive.arcadeDrive(adjustedThrottle, -adjustedSteer / 360., false);
-            xboxCtrlr.setRumble(RumbleType.kLeftRumble, (float) Math.abs(adjustedThrottle));
-            xboxCtrlr.setRumble(RumbleType.kRightRumble, (float) Math.abs(adjustedThrottle));
+            xboxCtrlr.rumble((float) Math.abs(adjustedThrottle), (float) Math.abs(adjustedThrottle));
         } else {
             // Disable steerPID while driving as to not accumulate the I term
             if (steerPID.isEnabled()) {
@@ -187,8 +183,7 @@ public class Robot extends IterativeRobot {
                 steerPID.disable();
             }
             robotDrive.arcadeDrive(0, 0, false);
-            xboxCtrlr.setRumble(RumbleType.kLeftRumble, 0);
-            xboxCtrlr.setRumble(RumbleType.kRightRumble, 0);
+            xboxCtrlr.rumble(0, 0);
         }
 
         SmartDashboard.putString("encoders", "" + leftEncoder.getDistance() + ":" + rightEncoder.getDistance());
