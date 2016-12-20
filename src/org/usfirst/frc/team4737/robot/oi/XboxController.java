@@ -85,4 +85,8 @@ public class XboxController {
         controller.setRumble(Joystick.RumbleType.kRightRumble, (float) right);
     }
 
+    public void rumble(double rumble) {
+        rumble(rumble, rumble);
+    }
+
 }
