@@ -58,6 +58,7 @@ public class Robot extends IterativeRobot {
 
         leftEncoder = new Encoder(0, 1, true);
         rightEncoder = new Encoder(2, 3, false);
+
         // Set encoders to units of feet
         double distancePerPulse = Math.PI * (4.0 / 12.0) / 360; // pi * d / (pulses per revolution)
         leftEncoder.setDistancePerPulse(distancePerPulse);
@@ -85,6 +86,7 @@ public class Robot extends IterativeRobot {
     }
 
     public void autonomousInit() {
+
     }
 
     public void autonomousPeriodic() {
@@ -96,14 +98,14 @@ public class Robot extends IterativeRobot {
     public void teleopPeriodic() {
         // TODO retune all of drive code
 
-        double driveSpeed = 0.5;    // medium speed
+        double driveSpeed = 0.65;    // medium speed
         double boostSpeed = 0.75;   // fast speed
-        double boostConst = 0.25;
+        double boostConst = 1.0 - boostSpeed;
 
-        double defaultSteer = 0.5;  // regular steer
-        double boostSteer = 0.33;   // wide steer
+        double defaultSteer = 0.75;  // regular steer
+        double boostSteer = 0.5;   // wide steer
         double driftSteer = 1;      // tight steer
-        double adjustSteer = 0.1;   // very slow steer
+        double adjustSteer = 0.3;   // very slow steer
 
         double steer = xboxCtrlr.LS.X.get();
         double throttle = xboxCtrlr.RT.get() - xboxCtrlr.LT.get();
@@ -131,7 +133,7 @@ public class Robot extends IterativeRobot {
             }
         } else {
             if (xboxCtrlr.X.get() && !autonDrive.isEnabled()) {
-                autonDrive.goDistance(5);
+                autonDrive.goDistance(5, 90);
             }
         }
 

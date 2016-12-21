@@ -10,8 +10,8 @@ import org.usfirst.frc.team4737.robot.Robot;
  */
 public class AutonDriveController {
 
-    private static final double wheelbase = 23 + 7.0 / 16.0;
-    private static final double maxAccel = 1; // TODO measure
+    private static final double hwheelbase = (23 + 7.0 / 16.0) / 12.0 / 2.0;
+    private static final double maxAccel = 5; // TODO measure
 
     private Encoder left;
     private Encoder right;
@@ -19,7 +19,7 @@ public class AutonDriveController {
     private PIDController leftPID;
     private PIDController rightPID;
 
-    private double T, m, d;
+    private double T, mL, mR;
     private double startTime;
 
     public AutonDriveController(Encoder left, Encoder right, RobotDrive drive) {
@@ -31,14 +31,14 @@ public class AutonDriveController {
             if (Robot.getInstance().isDisabled()) disable();
 
             // Update setpoint
-            double setpoint = getTarget(time() - startTime);
+            double setpoint = getTarget(time() - startTime, mL);
             leftPID.setSetpoint(setpoint);
 
             // Submit outputs
             drive.tankDrive(output, rightPID.get());
 
             // Update graph :D
-            SmartDashboard.putString("autondriveGraph", "" + setpoint + ":" + left.getDistance() + ":" + right.getDistance());
+            SmartDashboard.putString("leftCurve", "" + setpoint + ":" + left.getDistance());
         });
         SmartDashboard.putData("leftPID", leftPID);
 
@@ -47,19 +47,27 @@ public class AutonDriveController {
             if (Robot.getInstance().isDisabled()) disable();
 
             // Update setpoint
-            rightPID.setSetpoint(getTarget(time() - startTime));
+            double setpoint = getTarget(time() - startTime, mR);
+            rightPID.setSetpoint(setpoint);
 
             // Submit outputs
             drive.tankDrive(leftPID.get(), output);
+
+            // Update graph
+            SmartDashboard.putString("rightCurve", "" + setpoint + ":" + right.getDistance());
         });
         SmartDashboard.putData("rightPID", rightPID);
     }
 
-    public void goDistance(double dist) {
-        // TODO implement turning (param: angle)
-        T = Math.sqrt(dist / (2 * maxAccel));
-        m = maxAccel / T;
-        d = dist;
+    public void goDistance(double d, double angle) {
+        double dL = d - 2 * Math.PI / 360 * angle * hwheelbase;
+        double dR = d + 2 * Math.PI / 360 * angle * hwheelbase;
+        double TL = Math.sqrt(Math.abs(dL / (2 * maxAccel)));
+        double TR = Math.sqrt(Math.abs(dR / (2 * maxAccel)));
+        T = Math.max(TL, TR);
+        double o = maxAccel / T;
+        mL = angle >= 0 ? o : o * (d - Math.abs(2 * Math.PI / 360 * angle * hwheelbase)) / d;
+        mR = angle <= 0 ? o : o * (d - Math.abs(2 * Math.PI / 360 * angle * hwheelbase)) / d;
         startTime = time();
 
         leftPID.reset();
@@ -74,7 +82,7 @@ public class AutonDriveController {
     }
 
     public boolean finished() {
-        return time() - startTime > 4 * T && leftPID.onTarget() && rightPID.onTarget();
+        return !isEnabled() || (time() - startTime > 4 * T && leftPID.onTarget() && rightPID.onTarget());
     }
 
     public boolean isEnabled() {
@@ -86,7 +94,7 @@ public class AutonDriveController {
         rightPID.disable();
     }
 
-    private double getTarget(double t) {
+    private double getTarget(double t, double m) {
         /*
          * This is a piecewise function of a triangular-acceleration curve over time.
          * The function is derived from a triple integration of jerk.
@@ -101,7 +109,7 @@ public class AutonDriveController {
         } else if (t < 4 * T) {
             return m * t * t * t / 6 - 2 * m * T * t * t + 8 * m * T * T * t - 26 * m * T * T * T / 3;
         } else if (t > 4 * T) {
-            return d;
+            return m * 4 * T * 4 * T * 4 * T / 6 - 2 * m * T * 4 * T * 4 * T + 8 * m * T * T * 4 * T - 26 * m * T * T * T / 3;
         }
         return 0;
     }
