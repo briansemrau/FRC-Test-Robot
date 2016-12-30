@@ -40,6 +40,7 @@ public class AutonDriveController {
             // Update graph :D
             SmartDashboard.putString("leftCurve", "" + setpoint + ":" + left.getDistance());
         });
+        leftPID.setAbsoluteTolerance(0);
         SmartDashboard.putData("leftPID", leftPID);
 
         rightPID = new PIDController(1.0, 0.1, 0.0, 0.0, right, output -> {
@@ -56,22 +57,20 @@ public class AutonDriveController {
             // Update graph
             SmartDashboard.putString("rightCurve", "" + setpoint + ":" + right.getDistance());
         });
+        rightPID.setAbsoluteTolerance(0);
         SmartDashboard.putData("rightPID", rightPID);
     }
 
     public void goDistance(double distance, double angle) {
-        // TODO redo the geometry of this, maybe check the skidsteer military online paper
         /*
          * Creates the coefficients for the position curves of both the left and right side of the robot.
          * The function was derived geometrically and graphs of the position curves can be seen at:
-         * https://www.desmos.com/calculator/coknbv524x
+         * https://www.desmos.com/calculator/ugxskdjr6g
          */
 
-        double hwheelbase = wheelbase / 2.0;
-
         // Calculate the left/right total distance from the parameters and distance between wheels
-        double leftDistance = distance - 2.0 * Math.PI / 360.0 * angle * hwheelbase;
-        double rightDistance = distance + 2.0 * Math.PI / 360.0 * angle * hwheelbase;
+        double leftDistance = distance - 2.0 * Math.PI / 360.0 * angle * wheelbase / 2.0;
+        double rightDistance = distance + 2.0 * Math.PI / 360.0 * angle * wheelbase / 2.0;
 
         // Set the period as the period of the curve that takes the longest time
         double TL = Math.sqrt(Math.abs(leftDistance / (2.0 * maxAccel)));
@@ -79,9 +78,8 @@ public class AutonDriveController {
         T = Math.max(TL, TR);
 
         // Calculate the jerk coefficients for the position curves
-        double jerk = maxAccel / T * Math.signum(distance);
-        leftJerk = angle >= 0 ? jerk : jerk * (distance - Math.abs(2.0 * Math.PI / 360.0 * angle * hwheelbase)) / distance;
-        rightJerk = angle <= 0 ? jerk : jerk * (distance - Math.abs(2.0 * Math.PI / 360.0 * angle * hwheelbase)) / distance;
+        leftJerk = leftDistance / (2 * T * T * T);
+        rightJerk = rightDistance / (2 * T * T * T);
 
         // Reset and enable the PID controllers
         leftPID.reset();
@@ -96,11 +94,8 @@ public class AutonDriveController {
         startTime = time();
     }
 
-    /**
-     * @return Returns if the controller is not enabled or if the setpoint has been met.
-     */
-    public boolean finished() {
-        return !isEnabled() || (time() - startTime > 4 * T && leftPID.onTarget() && rightPID.onTarget());
+    public boolean onTarget() {
+        return time() - startTime > 4 * T && leftPID.onTarget() && rightPID.onTarget();
     }
 
     public boolean isEnabled() {
@@ -118,6 +113,8 @@ public class AutonDriveController {
          * The function is derived from a triple integration of jerk.
          * See https://www.desmos.com/calculator/s3ximk5vzu for fancy graphs of what this looks like.
          */
+
+        // Huh, it sure would be fun to put this in one line. Not like it would be much less readable.
         if (t < 0) {
             return 0;
         } else if (t < T) {
