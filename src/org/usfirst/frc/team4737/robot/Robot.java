@@ -86,7 +86,6 @@ public class Robot extends IterativeRobot {
     }
 
     public void autonomousInit() {
-
     }
 
     public void autonomousPeriodic() {
@@ -98,12 +97,9 @@ public class Robot extends IterativeRobot {
     public void teleopPeriodic() {
         // TODO retune all of drive code
 
-        double driveSpeed = 0.65;    // medium speed
-        double boostSpeed = 0.75;   // fast speed
-        double boostConst = 1.0 - boostSpeed;
+        double driveSpeed = 1.0;
 
-        double defaultSteer = 0.75;  // regular steer
-        double boostSteer = 0.5;   // wide steer
+        double defaultSteer = 0.75; // regular steer
         double driftSteer = 1;      // tight steer
         double adjustSteer = 0.3;   // very slow steer
 
@@ -111,29 +107,27 @@ public class Robot extends IterativeRobot {
         double throttle = xboxCtrlr.RT.get() - xboxCtrlr.LT.get();
         if (throttle < 0) steer = -steer;
 
-        boolean boost = xboxCtrlr.RB.get();
         boolean powersteer = xboxCtrlr.LB.get();
+        boolean regularDrive = throttle != 0 && !powersteer;
+        boolean adjusting = throttle == 0 && steer != 0;
 
-        if (boost || powersteer || throttle != 0) {
+        boolean driving = regularDrive || powersteer || adjusting;
+
+        if (driving) {
             autonDrive.disable();
-            if (boost && powersteer && throttle > 0) {
-                robotDrive.arcadeDrive(throttle * boostSpeed + boostConst, -steer * defaultSteer);
-            } else if (powersteer && throttle != 0) {
-                robotDrive.arcadeDrive(throttle * driveSpeed, -steer * driftSteer);
-            } else if (boost && throttle > 0) {
-                robotDrive.arcadeDrive(throttle * boostSpeed + boostConst, -steer * boostSteer);
-            } else if (throttle != 0) {
+
+            if (regularDrive) {
                 robotDrive.arcadeDrive(throttle * driveSpeed, -steer * defaultSteer);
-            } else if (powersteer && steer != 0) {
-                robotDrive.arcadeDrive(0, -steer * driftSteer);
-            } else if (steer != 0) {
+            } else if (powersteer) {
+                robotDrive.arcadeDrive(throttle * driveSpeed, -steer * driftSteer);
+            } else if (adjusting) {
                 robotDrive.arcadeDrive(0, -steer * adjustSteer);
-            } else {
-                robotDrive.arcadeDrive(0, 0);
             }
         } else {
-            if (xboxCtrlr.X.get() && !autonDrive.isEnabled()) {
+            if (xboxCtrlr.X.get()) {
                 autonDrive.goDistance(5, 90);
+            } else if (xboxCtrlr.Y.get()) {
+                autonDrive.goDistance(-5, -90);
             }
         }
 
